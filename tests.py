@@ -27,3 +27,25 @@ class Names(unittest.TestCase):
             "О'Лири Патрик",
             "О’Лири Патрик"
         ).check(), 97)
+
+    # имена похожи, отличаются регистром
+    # Буджолд Лоис МакМастер => Буджолд Лоис Макмастер
+    # де Линт Чарльз => Де Линт Чарльз
+    def test_register_symbol(self):
+        self.assertEqual(NameSimilarity(
+            "Буджолд Лоис МакМастер",
+            "Буджолд Лоис Макмастер"
+        ).check(), 98)
+
+    # имена похожи, отличаются удвоенным символом
+    def test_repeat_symbol(self):
+        self.assertEqual(NameSimilarity(
+            "Мьевилль Чайна",
+            "Мьевиль Чайна"
+        ).check(), 95)
+
+    def test_repeat_symbol_invert(self):
+        self.assertEqual(NameSimilarity(
+            "Мьевиль Чайна",
+            "Мьевилль Чайна"
+        ).check(), 95)

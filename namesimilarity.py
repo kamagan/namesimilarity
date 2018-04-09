@@ -8,9 +8,10 @@ import re
 class NameSimilarity:
 
     def __init__(self, name, check_name):
-        print('\n', name, check_name)
         self.factors = {
-            'non_letter': 3
+            'non_letter': 3,
+            'register': 2,
+            'repeat_letter': 5
         }
 
         self.uncertainty = 1
@@ -22,8 +23,9 @@ class NameSimilarity:
         self.check_name_init = check_name
 
     def check(self):
-        if self.name != self.check_name:
-            self.check_diff_non_letter()
+        self.check_diff_non_letter()
+        self.check_diff_register()
+        self.check_diff_repeat()
 
         if self.name != self.check_name:
             self.uncertainty = 100
@@ -39,12 +41,26 @@ class NameSimilarity:
             replace_condition=self.non_letter
         )
 
+    def check_diff_register(self):
+        self.check_diff_base(
+            replace_condition=self.register
+        )
+
+    def check_diff_repeat(self):
+        self.check_diff_base(
+            insert_condition=self.repeat_letter,
+            delete_condition=self.repeat_letter
+        )
+
     def check_diff_base(
         self,
         replace_condition=None,
         insert_condition=None,
         delete_condition=None
     ):
+        if self.name == self.check_name:
+            return
+
         conditions = {
             'equal': None,
             'replace': replace_condition,
@@ -73,7 +89,11 @@ class NameSimilarity:
                 if (
                     conditions[operation] is not None
                     and
-                    conditions[operation](name_sub_str, check_name_sub_str)
+                    conditions[operation](
+                        name_sub_str,
+                        check_name_sub_str,
+                        diff
+                    )
                 ):
                     # ... зменяем подстроку для проверяемого имени
                     # на подстроку имени
@@ -86,7 +106,7 @@ class NameSimilarity:
 
         self.check_name = check_name_tmp
 
-    def non_letter(self, a, b):
+    def non_letter(self, a, b, diff):
         if (
             re.match('^[^\w]*$', a) is not None
             and
@@ -96,3 +116,39 @@ class NameSimilarity:
             return True
 
         return False
+
+    def register(self, a, b, diff):
+        if (
+            re.match('^[\w]*$', a) is not None
+            and
+            re.match('^[\w]*$', b) is not None
+            and
+            a.lower() == b.lower()
+        ):
+            self.uncertainty *= self.factors['register']
+            return True
+        else:
+            return False
+
+    def repeat_letter(self, a, b, diff):
+        operation, \
+            sub_str_index_start_a, ___, \
+            sub_str_index_start_b, ___ \
+            = diff
+
+        a_full = self.name
+        b_full = self.check_name
+
+        if operation == 'insert':
+            a, b = b, a
+            a_full, b_full = b_full, a_full
+            sub_str_index_start_a, sub_str_index_start_b\
+                = sub_str_index_start_b, sub_str_index_start_a
+
+        a_previous = a_full[sub_str_index_start_a]
+
+        if a == a_previous:
+            self.uncertainty *= self.factors['repeat_letter']
+            return True
+        else:
+            return False
