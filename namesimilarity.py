@@ -145,9 +145,9 @@ class NameSimilarity:
             sub_str_index_start_a, sub_str_index_start_b\
                 = sub_str_index_start_b, sub_str_index_start_a
 
-        a_previous = a_full[sub_str_index_start_a]
+        a_next = a_full[sub_str_index_start_a + 1]
 
-        if a == a_previous:
+        if a == a_next:
             self.uncertainty *= self.factors['repeat_letter']
             return True
         else:
