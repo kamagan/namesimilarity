@@ -11,7 +11,30 @@ class NameSimilarity:
         self.factors = {
             'non_letter': 3,
             'register': 2,
-            'repeat_letter': 5
+            'repeat_letter': 5,
+            'substitutes': {
+                # Нортон Андрэ => Нортон Андре
+                'э': ['е', 3],
+
+                # Маркес Габриэль Гарсия => Гарсиа Маркес Габриэль
+                'я': ['а', 3],
+
+                # Ладыженский Олег Семенович => Ладыженский Олег Семёнович
+                'ё': ['е', 2],
+
+                # Херберт Фрэнк => Герберт Фрэнк
+                # Андерсен Ганс Христиан => Андерсен Ханс Кристиан
+                'г': ['х', 3],
+
+                # Андерсен Ганс Христиан => Андерсен Ханс Кристиан
+                'к': ['х', 3],
+
+                # Джерролд Дэвид => Герролд Дэвид
+                'дж': ['г', 3],
+
+                # Конан Дойль Артур Дойл Артур Конан
+                'ь': ['', 2]
+            }
         }
 
         self.uncertainty = 1
@@ -26,6 +49,7 @@ class NameSimilarity:
         self.check_diff_non_letter()
         self.check_diff_register()
         self.check_diff_repeat()
+        self.check_diff_similar_sound()
 
         if self.name != self.check_name:
             self.uncertainty = 100
@@ -50,6 +74,13 @@ class NameSimilarity:
         self.check_diff_base(
             insert_condition=self.repeat_letter,
             delete_condition=self.repeat_letter
+        )
+
+    def check_diff_similar_sound(self):
+        self.check_diff_base(
+            replace_condition=self.similar_sound_replace,
+            insert_condition=self.similar_sound_replace,
+            delete_condition=self.similar_sound_replace
         )
 
     def check_diff_base(
@@ -149,6 +180,32 @@ class NameSimilarity:
 
         if a == a_next:
             self.uncertainty *= self.factors['repeat_letter']
+            return True
+        else:
+            return False
+
+    def similar_sound_replace(self, a, b, diff):
+        a = a.lower()
+        b = b.lower()
+
+        substitutes = self.factors['substitutes']
+        sub_a = substitutes.get(a)
+        sub_b = substitutes.get(b)
+
+        if ((
+            sub_a is not None
+            and
+            sub_a[0] == b
+        ) or (
+            sub_b is not None
+            and
+            sub_b[0] == a
+        )):
+            if sub_a is not None:
+                self.uncertainty *= sub_a[1]
+            else:
+                self.uncertainty *= sub_b[1]
+
             return True
         else:
             return False
