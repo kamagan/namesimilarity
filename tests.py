@@ -50,6 +50,23 @@ class Names(unittest.TestCase):
             "Мьевилль Чайна"
         ).check(), 95)
 
+    # имена похожи, отличаются удвоенным символом расположенном в конце
+    def test_repeat_symbol_end(self):
+        self.assertEqual(NameSimilarity(
+            "Чайна Мьевилль",
+            "Чайна Мьевиль"
+        ).check(), 95)
+
+    def test_repeat_symbol_end_invert(self):
+        self.assertEqual(NameSimilarity(
+            "Чайна Мьевиль",
+            "Чайна Мьевилль"
+        ).check(), 95)
+
+    #
+    # имена похожи, отличаются буквами, дающими похожие звуки...
+
+    # ...
     # 'э': ['е', 3],
     def test_similar_sound_1(self):
         self.assertEqual(NameSimilarity(

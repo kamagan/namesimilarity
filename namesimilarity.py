@@ -176,9 +176,21 @@ class NameSimilarity:
             sub_str_index_start_a, sub_str_index_start_b\
                 = sub_str_index_start_b, sub_str_index_start_a
 
-        a_next = a_full[sub_str_index_start_a + 1]
+        a_next = None
+        a_next_index = sub_str_index_start_a + 1
+        if len(a_full) > a_next_index:
+            a_next = a_full[a_next_index]
 
-        if a == a_next:
+        a_pre = None
+        a_pre_index = sub_str_index_start_a - 1
+        if a_pre_index > 0:
+            a_pre = a_full[a_pre_index]
+
+        if (
+            (a_next is not None and a == a_next)
+            or
+            (a_pre is not None and a == a_pre)
+        ):
             self.uncertainty *= self.factors['repeat_letter']
             return True
         else:
