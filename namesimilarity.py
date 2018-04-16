@@ -12,6 +12,9 @@ class NameSimilarity:
             'non_letter': 3,
             'register': 2,
             'repeat_letter': 5,
+            'discarding_base': 5,
+            'discarding_both': 2,
+            'only_one_after_discarding': 4,
             'substitutes': {
                 # Нортон Андрэ => Нортон Андре
                 'э': ['е', 3],
@@ -32,7 +35,7 @@ class NameSimilarity:
                 # Джерролд Дэвид => Герролд Дэвид
                 'дж': ['г', 3],
 
-                # Конан Дойль Артур Дойл Артур Конан
+                # Конан Дойль Артур => Дойл Артур Конан
                 'ь': ['', 2]
             }
         }
@@ -45,13 +48,21 @@ class NameSimilarity:
         self.check_name = check_name
         self.check_name_init = check_name
 
-    def check(self):
+    def check(self, transposition=True):
+        if transposition:
+            self.check_transposition()
+
         self.check_diff_non_letter()
         self.check_diff_register()
         self.check_diff_repeat()
         self.check_diff_similar_sound()
 
-        if self.name != self.check_name:
+        if (
+            self.name != self.check_name
+            or self.uncertainty > 100
+            or self.name == ''
+            or self.check_name == ''
+        ):
             self.uncertainty = 100
 
         if self.uncertainty == 1:
@@ -59,6 +70,69 @@ class NameSimilarity:
 
         similarity = 100 - self.uncertainty
         return similarity
+
+    def check_transposition(self):
+        if self.name == self.check_name:
+            return
+
+        list_name = self.name.split()
+        list_check_name = self.check_name.split()
+        out_list_name = []
+        out_list_check_name = []
+
+        for item in list_name:
+            found = False
+
+            for check_item in list_check_name:
+                if check_item == item:
+                    out_list_name.append(item)
+                    out_list_check_name.append(check_item)
+                    list_check_name.remove(check_item)
+                    found = True
+                    break
+
+            if not found:
+                sim_max = 0
+                sim_max_index = None
+                index = 0
+                for check_item in list_check_name:
+                    sim = NameSimilarity(item, check_item).check(transposition=False)
+                    if sim > sim_max:
+                        sim_max = sim
+                        sim_max_index = index
+
+                    index += 1
+
+                if sim_max > 0:
+                    out_list_name.append(item)
+                    sim_check_item = list_check_name.pop(sim_max_index)
+                    out_list_check_name.append(sim_check_item)
+
+        rest_name = len(list_name) - len(out_list_name)
+        rest_check_name = len(list_check_name)
+        rest = rest_name + rest_check_name
+
+        # влияющие факторы:
+        #   кол-во похожих слов в имени
+        #   кол-во не-похожих слов в имени
+        #   был ли остаток только в name или check_name или в обоих
+        #       если только в одном, то это может быть различие
+        #       в наличии или отсутсвии отчества,
+        #       если осталось что-то и там и там,
+        #       то это уже сильно подозрительно
+
+        multiplier = 1
+        if len(out_list_check_name) < 2:
+            multiplier *= self.factors['only_one_after_discarding']
+
+        if rest_name > 0 and rest_check_name > 0:
+            multiplier *= self.factors['discarding_both']
+
+        if rest > 0:
+            self.uncertainty *= self.factors['discarding_base'] * rest * multiplier
+
+        self.name = ' '.join(out_list_name)
+        self.check_name = ' '.join(out_list_check_name)
 
     def check_diff_non_letter(self):
         self.check_diff_base(
