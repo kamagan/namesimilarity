@@ -4,6 +4,9 @@
 import difflib
 import re
 
+__author__ = "Oleg Bagretsov <kamagan@yandex.ru>"
+__version__ = "0.1.1"
+
 
 class NameSimilarity:
 
